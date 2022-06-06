@@ -1,9 +1,12 @@
+import os
 from typing import Dict
 
 from django.conf import settings
 from django.core.cache import DEFAULT_CACHE_ALIAS, caches
 from idom.core.types import ComponentConstructor
 
+
+os.environ["IDOM_DEBUG_MODE"] = str(int(settings.DEBUG))
 
 IDOM_REGISTERED_COMPONENTS: Dict[str, ComponentConstructor] = {}
 
