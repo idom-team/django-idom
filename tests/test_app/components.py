@@ -2,6 +2,8 @@ import idom
 
 import django_idom
 
+from . import views
+
 
 @idom.component
 def hello_world():
@@ -95,3 +97,49 @@ def django_js():
         ),
         idom.html.hr(),
     )
+
+
+@idom.component
+def view_to_component():
+    return django_idom.utils.view_to_component(views.view_to_component)
+
+
+@idom.component
+def view_to_component_async():
+    return django_idom.utils.view_to_component(views.view_to_component_async)
+
+
+@idom.component
+def view_to_component_class():
+    return django_idom.utils.view_to_component(views.ViewToComponentClass)
+
+
+@idom.component
+def view_to_component_compatibility():
+    return idom.html.div(
+        {"id": "view_to_component_compatibility"},
+        django_idom.utils.view_to_component(
+            views.view_to_component_compatibility, compatibility=True
+        ),
+        idom.html.hr(),
+    )
+
+
+@idom.component
+def view_to_component_middleware():
+    def str_replace_middleware(view):
+        def middleware(request, *args, **kwargs):
+            render = view(request, *args, **kwargs)
+            render.content = render.content.decode("utf-8").replace("Fail", "Success")
+            return render
+
+        return middleware
+
+    return django_idom.utils.view_to_component(
+        views.view_to_component_middleware, middleware=[str_replace_middleware]
+    )
+
+
+@idom.component
+def view_to_component_script():
+    return django_idom.utils.view_to_component(views.view_to_component_script)
