@@ -1,0 +1,12 @@
+.md-footer__inner {
+	display: none;
+}
+
+.md-tabs,
+.md-header {
+	background-color: var(--md-footer-bg-color--dark);
+}
+
+.md-typeset :is(.admonition, details) {
+	margin: 0.55em 0;
+}
