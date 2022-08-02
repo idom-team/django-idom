@@ -12,7 +12,6 @@ nav:
           - Components: features/components.md
           - Hooks: features/hooks.md
           - Decorators: features/decorators.md
-          - ORM: features/orm.md
           - Template Tag: features/templatetag.md
           - Settings: features/settings.md
     - Contribute:
@@ -52,6 +51,8 @@ markdown_extensions:
     - pymdownx.emoji:
           emoji_index: !!python/name:materialx.emoji.twemoji
           emoji_generator: !!python/name:materialx.emoji.to_svg
+    - pymdownx.tabbed:
+          alternate_style: true
     - pymdownx.highlight
     - pymdownx.superfences
     - pymdownx.details

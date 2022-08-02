@@ -2,97 +2,95 @@ import os
 import sys
 
 from channels.testing import ChannelsLiveServerTestCase
-from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions
-from selenium.webdriver.support.wait import WebDriverWait
+from django.test import TestCase
+from playwright.sync_api import TimeoutError, sync_playwright
 
 
 # These tests are broken on Windows due to Selenium
 if sys.platform != "win32":
 
-    class TestIdomCapabilities(ChannelsLiveServerTestCase):
+    class TestIdomCapabilities(TestCase, ChannelsLiveServerTestCase):
+        @classmethod
+        def setUpClass(cls):
+            os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
+            super().setUpClass()
+            cls.playwright = sync_playwright().start()
+            headed = bool(int(os.environ.get("PLAYWRIGHT_HEADED", 0)))
+            cls.browser = cls.playwright.chromium.launch(headless=not headed)
+            cls.page = cls.browser.new_page()
+
+        @classmethod
+        def tearDownClass(cls):
+            super().tearDownClass()
+            cls.page.close()
+            cls.browser.close()
+            cls.playwright.stop()
+
         def setUp(self):
-            self.driver = make_driver(5, 5)
-            self.driver.get(self.live_server_url)
-
-        def tearDown(self) -> None:
-            self.driver.quit()
-
-        def wait(self, timeout=10):
-            return WebDriverWait(self.driver, timeout)
-
-        def wait_until(self, condition, timeout=10):
-            return self.wait(timeout).until(lambda driver: condition())
+            super().setUp()
+            self.page.goto(self.live_server_url)
 
         def test_hello_world(self):
-            self.driver.find_element_by_id("hello-world")
+            self.page.wait_for_selector("#hello-world")
 
         def test_counter(self):
-            button = self.driver.find_element_by_id("counter-inc")
-            count = self.driver.find_element_by_id("counter-num")
-
             for i in range(5):
-                self.wait_until(lambda: count.get_attribute("data-count") == str(i))
-                button.click()
+                self.page.locator(f"#counter-num[data-count={i}]")
+                self.page.locator("#counter-inc").click()
 
         def test_parametrized_component(self):
-            element = self.driver.find_element_by_id("parametrized-component")
-            self.assertEqual(element.get_attribute("data-value"), "579")
+            self.page.locator("#parametrized-component[data-value='579']").wait_for()
 
         def test_component_from_web_module(self):
-            self.wait(20).until(
-                expected_conditions.visibility_of_element_located(
-                    (By.CLASS_NAME, "VictoryContainer")
-                )
-            )
+            self.page.wait_for_selector(".VictoryContainer")
 
         def test_use_websocket(self):
-            element = self.driver.find_element_by_id("use-websocket")
-            self.assertEqual(element.get_attribute("data-success"), "true")
+            self.page.locator("#use-websocket[data-success=true]").wait_for()
 
         def test_use_scope(self):
-            element = self.driver.find_element_by_id("use-scope")
-            self.assertEqual(element.get_attribute("data-success"), "true")
+            self.page.locator("#use-scope[data-success=true]").wait_for()
 
         def test_use_location(self):
-            element = self.driver.find_element_by_id("use-location")
-            self.assertEqual(element.get_attribute("data-success"), "true")
+            self.page.locator("#use-location[data-success=true]").wait_for()
 
         def test_static_css(self):
-            element = self.driver.find_element_by_css_selector("#django-css button")
             self.assertEqual(
-                element.value_of_css_property("color"), "rgba(0, 0, 255, 1)"
+                self.page.wait_for_selector("#django-css button").evaluate(
+                    "e => window.getComputedStyle(e).getPropertyValue('color')"
+                ),
+                "rgb(0, 0, 255)",
             )
 
         def test_static_js(self):
-            element = self.driver.find_element_by_id("django-js")
-            self.assertEqual(element.get_attribute("data-success"), "true")
+            self.page.locator("#django-js[data-success=true]").wait_for()
 
         def test_unauthorized_user(self):
             self.assertRaises(
-                NoSuchElementException,
-                self.driver.find_element_by_id,
-                "unauthorized-user",
+                TimeoutError,
+                self.page.wait_for_selector,
+                "#unauthorized-user",
+                timeout=1,
             )
-            element = self.driver.find_element_by_id("unauthorized-user-fallback")
-            self.assertIsNotNone(element)
+            self.page.wait_for_selector("#unauthorized-user-fallback")
 
         def test_authorized_user(self):
             self.assertRaises(
-                NoSuchElementException,
-                self.driver.find_element_by_id,
-                "authorized-user-fallback",
+                TimeoutError,
+                self.page.wait_for_selector,
+                "#authorized-user-fallback",
+                timeout=1,
             )
-            element = self.driver.find_element_by_id("authorized-user")
-            self.assertIsNotNone(element)
+            self.page.wait_for_selector("#authorized-user")
 
-
-def make_driver(page_load_timeout, implicit_wait_timeout):
-    options = webdriver.ChromeOptions()
-    options.headless = bool(int(os.environ.get("SELENIUM_HEADLESS", 0)))
-    driver = webdriver.Chrome(options=options)
-    driver.set_page_load_timeout(page_load_timeout)
-    driver.implicitly_wait(implicit_wait_timeout)
-    return driver
+        def test_use_query_and_mutation(self):
+            todo_input = self.page.wait_for_selector("#todo-input")
+            todo_input.type("sample-1")
+            todo_input.press("Enter")
+            self.page.wait_for_selector("#todo-item-sample-1")
+            self.page.wait_for_selector("#todo-item-sample-1-checkbox").click()
+            self.assertRaises(
+                TimeoutError,
+                self.page.wait_for_selector,
+                "#todo-item-sample-1",
+                timeout=1,
+            )

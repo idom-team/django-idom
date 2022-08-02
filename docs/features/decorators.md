@@ -42,7 +42,6 @@ def my_component():
 
     ```python title="components.py"
     from django_idom.decorators import auth_required
-    from django_idom.hooks import use_websocket
     from idom import component, html
 
     @component

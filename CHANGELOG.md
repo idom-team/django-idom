@@ -25,6 +25,8 @@ Using the following categories, list your changes in this order:
 ### Added
 
 -   `auth_required` decorator to prevent your components from rendered to unauthenticated users.
+-   `use_query` hook for fetching database values.
+-   `use_mutation` hook for modifying database values.
 
 ## [1.1.0] - 2022-07-01
 

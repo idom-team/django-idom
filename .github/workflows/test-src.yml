@@ -17,13 +17,13 @@ jobs:
       matrix:
         python-version: ["3.8", "3.9", "3.10"]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: nanasess/setup-chromedriver@master
-      - uses: actions/setup-node@v2-beta
+      - uses: actions/setup-node@v3
         with:
           node-version: "14"
       - name: Use Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install Python Dependencies
@@ -32,4 +32,4 @@ jobs:
         run: |
           npm install -g npm@latest
           npm --version
-          nox -s test -- --headless
+          nox -s test

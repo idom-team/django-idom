@@ -14,9 +14,12 @@ jobs:
   docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v4
         with:
           python-version: 3.x
       - run: pip install -r requirements/build-docs.txt
+      - run: linkcheckMarkdown docs/ -v -r
       - run: mkdocs build --verbose

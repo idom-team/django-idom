@@ -23,6 +23,12 @@ from django.urls import include, path
 from .views import base_template
 
 
+class AccessUser:
+    has_module_perms = has_perm = __getattr__ = lambda s, *a, **kw: True
+
+
+admin.site.has_permission = lambda r: setattr(r, "user", AccessUser()) or True
+
 urlpatterns = [
     path("", base_template),
     path("idom/", include("django_idom.http.urls")),
